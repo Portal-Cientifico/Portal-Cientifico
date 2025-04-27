@@ -1,4 +1,4 @@
-package com.cesarschool.portalcientifico.domain.user.payload;
+package com.cesarschool.portalcientifico.domain.comment;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -8,13 +8,13 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @Builder
-public class UserResponseDTO {
-
-    private String id;
-    private String name;
-    private String email;
+public class CommentResponseDTO {
+    private Long id;
+    private String content;
+    private String author;
     private LocalDateTime createdAt;
+    private Long likes;
 }

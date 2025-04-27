@@ -1,6 +1,6 @@
 package com.cesarschool.portalcientifico.domain.user;
 
-import com.cesarschool.portalcientifico.domain.upload.Area;
+import com.cesarschool.portalcientifico.domain.material.dto.Area;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -16,6 +16,7 @@ import java.util.List;
 @Builder
 public class User {
 
+    @Getter
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
@@ -60,4 +61,5 @@ public class User {
     protected void onUpdate() {
         this.lastActivity = LocalDateTime.now();
     }
+
 }

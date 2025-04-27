@@ -13,10 +13,11 @@ export interface Material {
     fileSize: string;
     pages?: number;
     keywords: string[];
-    downloads: number;
-    views: number;
-    likes: number;
-    comments: number;
+    totalDownload: number;
+    totalView: number;
+    likeCount: number;
+    liked: boolean;
+    commentCount: number;
     createdAt: string;
     updatedAt: string;
   }
@@ -36,10 +37,11 @@ export interface Material {
     fileSize: string;
     pages?: number;
     keywords: string[];
-    downloads: number;
-    views: number;
-    likes: number;
-    comments: number;
+    totalDownload: number;
+    totalView: number;
+    likeCount: number;
+    liked: boolean;
+    commentCount: number;
     createdAt: string;
     updatedAt: string;
   }
@@ -53,7 +55,7 @@ export interface Material {
     date: string;
     downloads: number;
     icon: React.ReactNode;
-  }
+  } 
   
   export interface UploadFormData {
     title: string;
@@ -63,3 +65,41 @@ export interface Material {
     keywords: string;
     file: File | null;
   }
+interface PageResponse<T> {
+  content: T[]
+  pageable: {
+    pageNumber: number
+    pageSize: number
+    sort: {
+      empty: boolean
+      sorted: boolean
+      unsorted: boolean
+    }
+    offset: number
+    unpaged: boolean
+    paged: boolean
+  }
+  last: boolean
+  totalElements: number
+  totalPages: number
+  size: number
+  number: number
+  sort: {
+    empty: boolean
+    sorted: boolean
+    unsorted: boolean
+  }
+  first: boolean
+  numberOfElements: number
+  empty: boolean
+}
+export interface MaterialSearchParams {
+  page?: number
+  size?: number
+  type?: string
+  area?: string
+  search?: string
+  sort?: string
+  dateRange?: number
+  minDownloads?: number
+}

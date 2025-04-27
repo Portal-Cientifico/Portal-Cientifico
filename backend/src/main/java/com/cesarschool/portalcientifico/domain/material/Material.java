@@ -1,5 +1,8 @@
-package com.cesarschool.portalcientifico.domain.upload;
+package com.cesarschool.portalcientifico.domain.material;
 
+import com.cesarschool.portalcientifico.domain.comment.Comment;
+import com.cesarschool.portalcientifico.domain.material.dto.Area;
+import com.cesarschool.portalcientifico.domain.material.dto.TypeMaterial;
 import com.cesarschool.portalcientifico.domain.user.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -7,7 +10,9 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "materials")
@@ -17,7 +22,6 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class Material {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -36,7 +40,7 @@ public class Material {
     private Area area;
 
     @ElementCollection
-    private List<String> keywords;
+    private Set<String> keywords;
 
     @Column(nullable = false)
     private String fileName;
@@ -67,4 +71,7 @@ public class Material {
     @UpdateTimestamp
     @Column(name = "update_at", nullable = false)
     private LocalDateTime updateAt;
+
+    @OneToMany(mappedBy = "materialId", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Comment> comments = new ArrayList<>();
 }
