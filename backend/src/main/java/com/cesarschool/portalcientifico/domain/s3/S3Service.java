@@ -1,4 +1,4 @@
-package com.cesarschool.portalcientifico.domain.upload;
+package com.cesarschool.portalcientifico.domain.s3;
 
 import com.cesarschool.portalcientifico.config.S3Config;
 import org.springframework.stereotype.Service;
@@ -18,6 +18,13 @@ public class S3Service {
 
     public String uploadFile(MultipartFile file) throws IOException {
         String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+        byte[] fileContent = file.getBytes();
+        S3Config.uploadFile(s3Client, fileName, fileContent);
+        return fileName;
+    }
+
+    public String uploadFile(MultipartFile file, String userId) throws IOException {
+        String fileName = userId + "_" + System.currentTimeMillis() + "_" + file.getOriginalFilename();
         byte[] fileContent = file.getBytes();
         S3Config.uploadFile(s3Client, fileName, fileContent);
         return fileName;

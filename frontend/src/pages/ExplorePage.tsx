@@ -1,24 +1,24 @@
 "use client"
 
 import type React from "react"
-import {useEffect, useState} from "react"
-import {useSearchParams} from "react-router-dom"
-import {BookOpen, Clock, FileText, GraduationCap, Layers, Lightbulb, Sparkles, TrendingUp} from "lucide-react"
-import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs"
-import {Card, CardContent} from "@/components/ui/card"
-import {Skeleton} from "@/components/ui/skeleton"
+import { useEffect, useState } from "react"
+import { useSearchParams } from "react-router-dom"
+import { BookOpen, Clock, FileText, GraduationCap, Layers, Lightbulb, Sparkles, TrendingUp } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Card, CardContent } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 import useAuth from "../hooks/useAuth"
-import {toast} from "react-toastify"
-import type {Resource} from "../types/resource"
-import resourceService from "../services/resourceService"
-import type {PageResponse} from "../types/pagination"
+import { toast } from "react-toastify"
+import type { Material } from "../types/material"
+import materialService from "../services/materialService"
+import type { PageResponse } from "../types/pagination"
 
 // Componentes
 import SearchBar from "../components/explore/SearchBar"
 import TrendingTopics from "../components/explore/TrendingTopics"
-import ResourceGrid from "../components/explore/MaterialGrid"
-import ResourceList from "../components/explore/MaterialList"
-import ResourceSection from "../components/explore/MaterialSection"
+import MaterialGrid from "../components/explore/MaterialGrid"
+import MaterialList from "../components/explore/MaterialList"
+import MaterialSection from "../components/explore/MaterialSection"
 import FilterPanel from "../components/explore/FilterPanel"
 import ActiveFilters from "../components/explore/ActiveFilters"
 import ViewToggle from "../components/explore/ViewToggle"
@@ -26,7 +26,7 @@ import EmptyState from "../components/explore/EmptyState"
 import Pagination from "../components/common/Pagination"
 
 // Dados estáticos para tipos de recursos e áreas de conhecimento
-const resourceTypes = [
+const materialTypes = [
   { id: "ARTICLE", label: "Artigos", icon: <FileText className="h-4 w-4" /> },
   { id: "THESIS", label: "TCCs", icon: <GraduationCap className="h-4 w-4" /> },
   { id: "NOTES", label: "Resumos", icon: <BookOpen className="h-4 w-4" /> },
@@ -52,10 +52,10 @@ const ExplorePage: React.FC = () => {
 
   // Estados para recursos
   const [isLoading, setIsLoading] = useState(true)
-  const [resources, setResources] = useState<Resource[]>([])
-  const [recommendedResources, setRecommendedResources] = useState<Resource[]>([])
-  const [trendingResources, setTrendingResources] = useState<Resource[]>([])
-  const [recentResources, setRecentResources] = useState<Resource[]>([])
+  const [materials, setMaterials] = useState<Material[]>([])
+  const [recommendedMaterials, setRecommendedMaterials] = useState<Material[]>([])
+  const [trendingMaterials, setTrendingMaterials] = useState<Material[]>([])
+  const [recentMaterials, setRecentMaterials] = useState<Material[]>([])
   const [trendingTopics, setTrendingTopics] = useState<string[]>([])
 
   // Estados para paginação
@@ -81,7 +81,7 @@ const ExplorePage: React.FC = () => {
   const [selectedAreas, setSelectedAreas] = useState<string[]>([])
   const [dateRange, setDateRange] = useState<[number, number]>([0, 5]) // 0-5 anos
   const [minDownloads, setMinDownloads] = useState(0)
-  const [onlyFreeResources, setOnlyFreeResources] = useState(false)
+  const [onlyFreeMaterials, setOnlyFreeMaterials] = useState(false)
   const [sortBy, setSortBy] = useState("relevance")
   const [filtersVisible, setFiltersVisible] = useState(false)
 
@@ -93,11 +93,13 @@ const ExplorePage: React.FC = () => {
     const sort = searchParams.get("sort") || "relevance"
     const page = Number.parseInt(searchParams.get("page") || "0", 10)
     const size = Number.parseInt(searchParams.get("size") || "12", 10)
+    const view = searchParams.get("view") || "grid"
 
     setSearchTerm(query)
     if (type) setSelectedTypes(type.split(","))
     if (area) setSelectedAreas(area.split(","))
     setSortBy(sort)
+    setViewMode(view as "grid" | "list")
     setPagination((prev) => ({
       ...prev,
       currentPage: page,
@@ -114,7 +116,7 @@ const ExplorePage: React.FC = () => {
   useEffect(() => {
     const fetchTrendingTopics = async () => {
       try {
-        const topics = await resourceService.getTrendingTopics()
+        const topics = await materialService.getTrendingTopics()
         setTrendingTopics(topics)
       } catch (error) {
         console.error("Erro ao buscar tópicos em alta:", error)
@@ -137,7 +139,7 @@ const ExplorePage: React.FC = () => {
 
   // Carregar recursos com base nos filtros
   useEffect(() => {
-    const fetchResources = async () => {
+    const fetchMaterials = async () => {
       setIsLoading(true)
       try {
         // Preparar parâmetros de busca
@@ -150,12 +152,12 @@ const ExplorePage: React.FC = () => {
           sort: sortBy === "relevance" ? undefined : sortBy,
           dateRange: dateRange[1],
           minDownloads: minDownloads > 0 ? minDownloads : undefined,
-          onlyFree: onlyFreeResources || undefined,
+          onlyFree: onlyFreeMaterials || undefined,
         }
 
         // Buscar recursos filtrados
-        const response = await resourceService.getResources(params)
-        setResources(response.content)
+        const response = await materialService.getMaterials(params)
+        setMaterials(response.content)
         setPagination({
           currentPage: response.number,
           totalPages: response.totalPages,
@@ -165,13 +167,13 @@ const ExplorePage: React.FC = () => {
       } catch (error) {
         console.error("Erro ao buscar recursos:", error)
         toast.error("Não foi possível carregar os recursos. Tente novamente mais tarde.")
-        setResources([])
+        setMaterials([])
       } finally {
         setIsLoading(false)
       }
     }
 
-    fetchResources()
+    fetchMaterials()
   }, [
     searchTerm,
     selectedTypes,
@@ -179,14 +181,14 @@ const ExplorePage: React.FC = () => {
     sortBy,
     dateRange,
     minDownloads,
-    onlyFreeResources,
+    onlyFreeMaterials,
     pagination.currentPage,
     pagination.size,
   ])
 
   // Carregar recursos recomendados, em alta e recentes
   useEffect(() => {
-    const fetchCategorizedResources = async () => {
+    const fetchCategorizedMaterials = async () => {
       if (activeTab !== "all" || searchTerm || selectedTypes.length > 0 || selectedAreas.length > 0) {
         return // Não carregar se estiver em outra aba ou com filtros ativos
       }
@@ -194,40 +196,40 @@ const ExplorePage: React.FC = () => {
       try {
         // Carregar recursos recomendados se o usuário estiver autenticado
         if (isAuthenticated) {
-          const recommendedResponse = await resourceService.getRecommendedResources()
-          setRecommendedResources(recommendedResponse.content)
+          const recommendedResponse = await materialService.getRecommendedMaterials()
+          setRecommendedMaterials(recommendedResponse.content)
         }
 
         // Carregar recursos em alta
-        const trendingResponse = await resourceService.getTrendingResources()
-        setTrendingResources(trendingResponse.content)
+        const trendingResponse = await materialService.getTrendingMaterials()
+        setTrendingMaterials(trendingResponse.content)
 
         // Carregar recursos recentes
-        const recentResponse = await resourceService.getRecentResources()
-        setRecentResources(recentResponse.content)
+        const recentResponse = await materialService.getRecentMaterials()
+        setRecentMaterials(recentResponse.content)
       } catch (error) {
         console.error("Erro ao carregar recursos categorizados:", error)
         toast.error("Não foi possível carregar alguns recursos. Tente novamente mais tarde.")
       }
     }
 
-    fetchCategorizedResources()
+    fetchCategorizedMaterials()
   }, [activeTab, isAuthenticated, searchTerm, selectedTypes, selectedAreas])
 
   // Carregar recursos específicos para cada aba
   useEffect(() => {
-    const fetchTabResources = async () => {
+    const fetchTabMaterials = async () => {
       if (activeTab === "all") return // Já tratado em outro useEffect
 
       setIsLoading(true)
       try {
-        let response: PageResponse<Resource>
+        let response: PageResponse<Material>
 
         switch (activeTab) {
           case "recommended":
             if (isAuthenticated) {
-              response = await resourceService.getRecommendedResources(pagination.currentPage, pagination.size)
-              setResources(response.content)
+              response = await materialService.getRecommendedMaterials(pagination.currentPage, pagination.size)
+              setMaterials(response.content)
               setPagination({
                 currentPage: response.number,
                 totalPages: response.totalPages,
@@ -237,8 +239,8 @@ const ExplorePage: React.FC = () => {
             }
             break
           case "trending":
-            response = await resourceService.getTrendingResources(pagination.currentPage, pagination.size)
-            setResources(response.content)
+            response = await materialService.getTrendingMaterials(pagination.currentPage, pagination.size)
+            setMaterials(response.content)
             setPagination({
               currentPage: response.number,
               totalPages: response.totalPages,
@@ -247,8 +249,8 @@ const ExplorePage: React.FC = () => {
             })
             break
           case "recent":
-            response = await resourceService.getRecentResources(pagination.currentPage, pagination.size)
-            setResources(response.content)
+            response = await materialService.getRecentMaterials(pagination.currentPage, pagination.size)
+            setMaterials(response.content)
             setPagination({
               currentPage: response.number,
               totalPages: response.totalPages,
@@ -260,14 +262,14 @@ const ExplorePage: React.FC = () => {
       } catch (error) {
         console.error(`Erro ao carregar recursos da aba ${activeTab}:`, error)
         toast.error("Não foi possível carregar os recursos. Tente novamente mais tarde.")
-        setResources([])
+        setMaterials([])
       } finally {
         setIsLoading(false)
       }
     }
 
     if (activeTab !== "all") {
-      fetchTabResources()
+      fetchTabMaterials()
     }
   }, [activeTab, pagination.currentPage, pagination.size, isAuthenticated])
 
@@ -282,6 +284,7 @@ const ExplorePage: React.FC = () => {
     params.set("tab", activeTab)
     params.set("page", "0") // Resetar para a primeira página ao aplicar filtros
     params.set("size", pagination.size.toString())
+    params.set("view", viewMode) // Save view mode in URL
 
     setSearchParams(params)
     setFiltersVisible(false)
@@ -295,13 +298,14 @@ const ExplorePage: React.FC = () => {
     setSelectedAreas([])
     setDateRange([0, 5])
     setMinDownloads(0)
-    setOnlyFreeResources(false)
+    setOnlyFreeMaterials(false)
     setSortBy("relevance")
 
     const params = new URLSearchParams()
     params.set("tab", activeTab)
     params.set("page", "0")
     params.set("size", pagination.size.toString())
+    params.set("view", viewMode) // Keep view mode when clearing filters
     setSearchParams(params)
     setPagination((prev) => ({ ...prev, currentPage: 0 }))
   }
@@ -374,6 +378,7 @@ const ExplorePage: React.FC = () => {
     params.set("tab", "all")
     params.set("page", "0")
     params.set("size", pagination.size.toString())
+    params.set("view", viewMode) // Keep view mode when clicking on topic
     setSearchParams(params)
     setPagination((prev) => ({ ...prev, currentPage: 0 }))
   }
@@ -396,6 +401,14 @@ const ExplorePage: React.FC = () => {
     setPagination((prev) => ({ ...prev, size: newSize, currentPage: 0 }))
   }
 
+  // Handle view mode change
+  const handleViewModeChange = (mode: "grid" | "list") => {
+    setViewMode(mode)
+    const params = new URLSearchParams(searchParams)
+    params.set("view", mode)
+    setSearchParams(params)
+  }
+
   return (
     <div className="container mx-auto py-10 px-4 md:px-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
@@ -407,20 +420,20 @@ const ExplorePage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
+          <ViewToggle viewMode={viewMode} setViewMode={handleViewModeChange} />
 
           <FilterPanel
             selectedTypes={selectedTypes}
             selectedAreas={selectedAreas}
             dateRange={dateRange}
-            onlyFreeResources={onlyFreeResources}
+            onlyFreeMaterials={onlyFreeMaterials}
             sortBy={sortBy}
-            resourceTypes={resourceTypes}
+            materialTypes={materialTypes}
             knowledgeAreas={knowledgeAreas}
             toggleType={toggleType}
             toggleArea={toggleArea}
             setDateRange={setDateRange}
-            setOnlyFreeResources={setOnlyFreeResources}
+            setOnlyFreeMaterials={setOnlyFreeMaterials}
             setSortBy={setSortBy}
             applyFilters={applyFilters}
             clearFilters={clearFilters}
@@ -497,7 +510,7 @@ const ExplorePage: React.FC = () => {
                 selectedTypes={selectedTypes}
                 selectedAreas={selectedAreas}
                 sortBy={sortBy}
-                resourceTypes={resourceTypes}
+                materialTypes={materialTypes}
                 knowledgeAreas={knowledgeAreas}
                 clearSearchTerm={clearSearchTerm}
                 removeType={removeType}
@@ -525,12 +538,12 @@ const ExplorePage: React.FC = () => {
                       </Card>
                     ))}
                 </div>
-              ) : resources.length > 0 ? (
+              ) : materials.length > 0 ? (
                 <>
                   {viewMode === "grid" ? (
-                    <ResourceGrid resources={resources} />
+                    <MaterialGrid materials={materials} />
                   ) : (
-                    <ResourceList resources={resources} />
+                    <MaterialList materials={materials} />
                   )}
 
                   {/* Paginação */}
@@ -553,51 +566,57 @@ const ExplorePage: React.FC = () => {
             </div>
           ) : (
             <>
-              {isAuthenticated && recommendedResources.length > 0 && (
-                <ResourceSection
+              {isAuthenticated && recommendedMaterials.length > 0 && (
+                <MaterialSection
                   title="Recomendados para Você"
                   description="Conteúdos selecionados com base nos seus interesses e histórico"
-                  resources={recommendedResources}
+                  materials={recommendedMaterials}
                   icon={<Sparkles className="h-5 w-5 text-orange-500" />}
                   isLoading={isLoading}
+                  viewMode={viewMode}
                   onViewMore={() => {
                     const params = new URLSearchParams()
                     params.set("tab", "recommended")
                     params.set("page", "0")
+                    params.set("view", viewMode)
                     setSearchParams(params)
                     setActiveTab("recommended")
                   }}
                 />
               )}
 
-              {trendingResources.length > 0 && (
-                <ResourceSection
+              {trendingMaterials.length > 0 && (
+                <MaterialSection
                   title="Em Alta"
                   description="Os materiais mais populares e bem avaliados da plataforma"
-                  resources={trendingResources}
+                  materials={trendingMaterials}
                   icon={<TrendingUp className="h-5 w-5 text-orange-500" />}
                   isLoading={isLoading}
+                  viewMode={viewMode}
                   onViewMore={() => {
                     const params = new URLSearchParams()
                     params.set("tab", "trending")
                     params.set("page", "0")
+                    params.set("view", viewMode)
                     setSearchParams(params)
                     setActiveTab("trending")
                   }}
                 />
               )}
 
-              {recentResources.length > 0 && (
-                <ResourceSection
+              {recentMaterials.length > 0 && (
+                <MaterialSection
                   title="Adicionados Recentemente"
                   description="Descubra os últimos materiais compartilhados pela comunidade"
-                  resources={recentResources}
+                  materials={recentMaterials}
                   icon={<Clock className="h-5 w-5 text-orange-500" />}
                   isLoading={isLoading}
+                  viewMode={viewMode}
                   onViewMore={() => {
                     const params = new URLSearchParams()
                     params.set("tab", "recent")
                     params.set("page", "0")
+                    params.set("view", viewMode)
                     setSearchParams(params)
                     setActiveTab("recent")
                   }}
@@ -631,9 +650,9 @@ const ExplorePage: React.FC = () => {
                     </Card>
                   ))}
               </div>
-            ) : resources.length > 0 ? (
+            ) : materials.length > 0 ? (
               <>
-                {viewMode === "grid" ? <ResourceGrid resources={resources} /> : <ResourceList resources={resources} />}
+                {viewMode === "grid" ? <MaterialGrid materials={materials} /> : <MaterialList materials={materials} />}
 
                 {/* Paginação */}
                 {pagination.totalPages > 1 && (
@@ -677,9 +696,9 @@ const ExplorePage: React.FC = () => {
                     </Card>
                   ))}
               </div>
-            ) : resources.length > 0 ? (
+            ) : materials.length > 0 ? (
               <>
-                {viewMode === "grid" ? <ResourceGrid resources={resources} /> : <ResourceList resources={resources} />}
+                {viewMode === "grid" ? <MaterialGrid materials={materials} /> : <MaterialList materials={materials} />}
 
                 {/* Paginação */}
                 {pagination.totalPages > 1 && (
@@ -727,9 +746,9 @@ const ExplorePage: React.FC = () => {
                     </Card>
                   ))}
               </div>
-            ) : resources.length > 0 ? (
+            ) : materials.length > 0 ? (
               <>
-                {viewMode === "grid" ? <ResourceGrid resources={resources} /> : <ResourceList resources={resources} />}
+                {viewMode === "grid" ? <MaterialGrid materials={materials} /> : <MaterialList materials={materials} />}
 
                 {/* Paginação */}
                 {pagination.totalPages > 1 && (

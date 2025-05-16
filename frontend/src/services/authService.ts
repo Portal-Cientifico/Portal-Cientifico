@@ -1,6 +1,6 @@
 import api from './api';
-import {AuthResponse, LoginCredentials, RegisterData, User} from '../types/auth';
-import {getToken, removeToken, setToken} from '../utils/storage';
+import {AuthResponse, LoginCredentials, User} from '../types/auth';
+import {getRefreshToken, getToken, removeToken, setRefreshToken, setToken} from '../utils/storage';
 
 const authService = {
 
@@ -9,7 +9,7 @@ const authService = {
       const response = await api.post<AuthResponse>('/auth/login', credentials);
       if (response.data.accessToken) {
         setToken(response.data.accessToken);
-        localStorage.setItem('refreshToken', response.data.refreshToken);
+        setRefreshToken(response.data.refreshToken);
       }
       return response.data;
     } catch (err) {
@@ -18,18 +18,31 @@ const authService = {
     }
   },
 
-  async register(data: RegisterData): Promise<AuthResponse> {
-    const response = await api.post<AuthResponse>('/auth/register', data);
-    if (response.data.accessToken) {
-      setToken(response.data.accessToken);
-      localStorage.setItem('refreshToken', response.data.refreshToken);
+  async register(formData: FormData): Promise<AuthResponse> {
+    try {
+      const response = await api.post<AuthResponse>('/auth/register', formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return response.data;
+    } catch (err) {
+      console.error("Erro na resposta:", err.response);
+      throw err;
     }
-    return response.data;
   },
 
-  logout(): void {
-    removeToken();
-    localStorage.removeItem('refreshToken');
+  async logout(): Promise<void> {
+    try {
+      const refreshToken = getRefreshToken();
+      if (refreshToken) {
+        await api.post('/auth/logout', { refreshToken });
+      }
+    } catch (err) {
+      console.error("Erro ao fazer logout:", err);
+    } finally {
+      removeToken();
+    }
   },
 
   async getCurrentUser(): Promise<User | null> {
@@ -37,16 +50,26 @@ const authService = {
     if (!token) return null;
 
     try {
-      const response = await api.get<User>('/auth/me');
+      const response = await api.get<User>('/users/me');
       return response.data;
     } catch (error) {
-      this.logout();  // Se houver erro ao recuperar o usuário, fazemos logout
+      this.logout();
       return null;
     }
   },
 
+  async toggleFollowAuthor(authorId: string): Promise<boolean> {
+    const response = await api.post(`/users/${authorId}/follow`);
+    return response.data;
+  },
+
+  async checkFollowStatus(targetUserId: string): Promise<boolean> {
+    const response = await api.get<boolean>(`/users/${targetUserId}/follow/status`);
+    return response.data;
+  },
+
   isAuthenticated(): boolean {
-    return !!getToken();  // Verifica se há token armazenado
+    return !!getToken();
   }
 };
 

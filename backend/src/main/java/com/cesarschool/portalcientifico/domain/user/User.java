@@ -1,6 +1,6 @@
 package com.cesarschool.portalcientifico.domain.user;
 
-import com.cesarschool.portalcientifico.domain.upload.Area;
+import com.cesarschool.portalcientifico.domain.material.dto.Area;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -30,11 +30,47 @@ public class User {
     private String password;
 
     @Column
-    private String photoUrl;
+    private String profilePictureFileName;
 
-    @Column(nullable = false)
+    @Column
+    private String coverImageFileName;
+
+    @Column
+    private String institution;
+
+    @Column
+    private String location;
+
+    @Column(length = 500)
+    private String bio;
+
+    @Column
+    private String headline;
+
+    @Column
+    private String website;
+
+    @Column
+    private Boolean verified;
+
+    @Column
     @Enumerated(EnumType.STRING)
     private UserRole role;
+
+    @Column
+    private String github;
+
+    @Column
+    private String linkedin;
+
+    @Column
+    private String twitter;
+
+    @ElementCollection(targetClass = Area.class)
+    @Enumerated(EnumType.STRING)
+    @CollectionTable(name = "user_preferred_areas", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "area")
+    private List<Area> preferredAreas;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
@@ -44,12 +80,6 @@ public class User {
 
     @Column(length = 500)
     private String refreshToken;
-
-    @ElementCollection(targetClass = Area.class)
-    @Enumerated(EnumType.STRING)
-    @CollectionTable(name = "user_preferred_areas", joinColumns = @JoinColumn(name = "user_id"))
-    @Column(name = "area")
-    private List<Area> preferredAreas;
 
     @PrePersist
     protected void onCreate() {

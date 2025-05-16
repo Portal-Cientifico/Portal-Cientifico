@@ -1,36 +1,42 @@
-"use client"
+import React from "react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
+import type { Material } from "../../types/material"
+import MaterialGrid from "./MaterialGrid"
+import MaterialList from "./MaterialList"
 
-import type React from "react"
-import {Button} from "@/components/ui/button"
-import {Card, CardContent} from "@/components/ui/card"
-import {Skeleton} from "@/components/ui/skeleton"
-import ResourceGrid from "./MaterialGrid"
-import type {Resource} from "../../types/resource"
-
-interface ResourceSectionProps {
+interface MaterialSectionProps {
   title: string
   description: string
-  resources: Resource[]
+  materials: Material[]
   icon: React.ReactNode
   isLoading: boolean
-  onViewMore?: () => void
+  onViewMore: () => void
+  viewMode?: "grid" | "list" // Add viewMode prop
 }
 
-const ResourceSection: React.FC<ResourceSectionProps> = ({
+const MaterialSection: React.FC<MaterialSectionProps> = ({
   title,
   description,
-  resources,
+  materials,
   icon,
   isLoading,
   onViewMore,
+  viewMode = "grid", // Default to grid if not provided
 }) => {
   return (
     <div className="mb-10">
-      <div className="flex items-center gap-2 mb-4">
-        {icon}
-        <h2 className="text-xl font-bold">{title}</h2>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          {icon}
+          <h2 className="text-xl font-bold">{title}</h2>
+        </div>
+        <Button variant="link" className="text-orange-600" onClick={onViewMore}>
+          Ver mais
+        </Button>
       </div>
-      <p className="text-gray-500 mb-6">{description}</p>
+      <p className="text-gray-500 mb-4">{description}</p>
 
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -52,22 +58,15 @@ const ResourceSection: React.FC<ResourceSectionProps> = ({
             ))}
         </div>
       ) : (
-        <ResourceGrid resources={resources.slice(0, 8)} />
-      )}
-
-      {resources.length > 8 && onViewMore && (
-        <div className="mt-4 text-center">
-          <Button
-            variant="outline"
-            className="border-orange-200 text-orange-600 hover:bg-orange-50"
-            onClick={onViewMore}
-          >
-            Ver Mais
-          </Button>
-        </div>
+        // Render either grid or list based on viewMode
+        viewMode === "grid" ? (
+          <MaterialGrid materials={materials} />
+        ) : (
+          <MaterialList materials={materials} />
+        )
       )}
     </div>
   )
 }
 
-export default ResourceSection
+export default MaterialSection

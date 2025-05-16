@@ -24,9 +24,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const token = getToken();
-    setIsAuthenticated(!!token);
-    setIsLoading(false);
+    const initializeAuth = async () => {
+      const token = getToken();
+      if (token) {
+        try {
+          const response = await authService.getCurrentUser();
+          setUser(response);
+          setIsAuthenticated(true);
+        } catch (error) {
+          logout();
+        }
+      }
+      setIsLoading(false);
+    };
+  
+    initializeAuth();
   }, []);
 
   const login = async (credentials: LoginCredentials) => {
@@ -43,13 +55,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const register = async (data: RegisterData) => {
+  const register = async (formData: FormData) => {
     try {
-      const response = await authService.register(data);
+      const response = await authService.register(formData);
       setUser(response.user);
       setIsAuthenticated(true);
       return { success: true, data: response };
     } catch (error: any) {
+      console.log(error)
       return {
         success: false,
         error: error.response?.data?.message || 'Erro ao criar conta',
